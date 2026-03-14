@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { api } from "../../services/api/client";
+import { useAuthStore } from "./auth";
 import type { ChatMessage, Conversation, ConversationMember, User } from "../../types";
 
 type Detail = {
@@ -16,7 +17,8 @@ export const useChatStore = defineStore("chat", {
     onlineUsers: [] as User[],
     currentConversationId: null as number | null,
     currentConversation: null as Detail | null,
-    messagesByConversation: {} as Record<number, ChatMessage[]>
+    messagesByConversation: {} as Record<number, ChatMessage[]>,
+    unreadCountByConversation: {} as Record<number, number>
   }),
   getters: {
     currentMessages(state) {
@@ -40,6 +42,7 @@ export const useChatStore = defineStore("chat", {
     },
     async selectConversation(conversationId: number) {
       this.currentConversationId = conversationId;
+      this.unreadCountByConversation[conversationId] = 0;
       const detail = await api.get(`/api/conversations/${conversationId}`);
       this.currentConversation = detail.data.data.conversation;
       const messages = await api.get(`/api/conversations/${conversationId}/messages`);
@@ -74,8 +77,16 @@ export const useChatStore = defineStore("chat", {
       await api.post(`/api/conversations/${this.currentConversationId}/messages`, { type, fileId });
     },
     appendMessage(message: ChatMessage) {
+      const authStore = useAuthStore();
       const list = this.messagesByConversation[message.conversationId] ?? [];
       this.messagesByConversation[message.conversationId] = [...list, message];
+
+      const isIncoming = message.sender.id !== authStore.user?.id;
+      const isActiveConversation = this.currentConversationId === message.conversationId;
+      if (isIncoming && !isActiveConversation) {
+        const currentUnread = this.unreadCountByConversation[message.conversationId] ?? 0;
+        this.unreadCountByConversation[message.conversationId] = currentUnread + 1;
+      }
     }
   }
 });

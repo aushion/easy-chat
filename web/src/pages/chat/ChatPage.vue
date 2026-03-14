@@ -204,6 +204,15 @@ function getConversationPreview(conversation: Conversation): string {
   return conversation.lastMessage.content ?? "新消息";
 }
 
+function getUnreadBadge(conversationId: number): string {
+  const count = chatStore.unreadCountByConversation[conversationId] ?? 0;
+  if (count <= 0) {
+    return "";
+  }
+
+  return count > 10 ? "10+" : String(count);
+}
+
 function getShortTime(value?: string | null): string {
   if (!value) {
     return "";
@@ -268,21 +277,39 @@ function getAvatarStyle(seed?: string | number | null) {
 </script>
 
 <template>
-  <main class="screen-shell">
+  <main class="screen-shell screen-shell--chat">
     <div class="ambient ambient--left"></div>
     <div class="ambient ambient--right"></div>
 
     <section class="messenger-layout">
-      <aside class="messenger-sidebar">
-        <header class="brand-row">
+      <nav class="messenger-rail" aria-label="快捷操作">
+        <button class="rail-brand" type="button" title="刷新会话" @click="chatStore.refreshConversations()">
           <div class="brand-mark" aria-hidden="true">
             <span></span>
             <span></span>
             <span></span>
           </div>
-          <div>
+        </button>
+
+        <div class="rail-stack">
+          <button class="rail-button rail-button--active" type="button" title="会话列表" @click="chatStore.refreshConversations()">
+            ◎
+          </button>
+          <button class="rail-button" type="button" title="创建群组" @click="openDrawer('group')">＋</button>
+          <button class="rail-button" type="button" title="个人资料" @click="openDrawer('profile')">◌</button>
+        </div>
+
+        <div class="rail-stack rail-stack--bottom">
+          <button class="rail-button" type="button" title="退出登录" @click="logout">↗</button>
+        </div>
+      </nav>
+
+      <aside class="messenger-sidebar">
+        <header class="brand-row">
+          <div class="brand-copy">
             <p class="eyebrow">局域网通信</p>
             <h1>Easy Chat</h1>
+            <p class="chat-meta">轻量聊天、群组协作、文件互传</p>
           </div>
         </header>
 
@@ -291,10 +318,10 @@ function getAvatarStyle(seed?: string | number | null) {
           <input v-model="searchQuery" type="text" placeholder="搜索会话或消息摘要" />
         </label>
 
-        <section class="sidebar-block">
+        <section class="sidebar-block sidebar-block--list">
           <div class="block-head">
             <div>
-              <p class="eyebrow">会话列表</p>
+              <p class="eyebrow">Messages</p>
               <h2>最近聊天</h2>
             </div>
             <span class="chip">{{ filteredConversations.length }}</span>
@@ -306,11 +333,15 @@ function getAvatarStyle(seed?: string | number | null) {
               :key="conversation.id"
               class="conversation-row"
               :class="{ 'conversation-row--active': chatStore.currentConversationId === conversation.id }"
+              type="button"
               @click="chatStore.selectConversation(conversation.id)"
             >
               <div class="avatar avatar--conversation" :style="getAvatarStyle(getConversationLabel(conversation))">
                 {{ getInitials(getConversationLabel(conversation)) }}
               </div>
+              <span v-if="getUnreadBadge(conversation.id)" class="conversation-badge">
+                {{ getUnreadBadge(conversation.id) }}
+              </span>
               <div class="conversation-copy">
                 <div class="conversation-title">
                   <strong>{{ getConversationLabel(conversation) }}</strong>
@@ -345,6 +376,7 @@ function getAvatarStyle(seed?: string | number | null) {
               v-for="user in chatStore.onlineUsers"
               :key="user.id"
               class="user-pill"
+              type="button"
               @click="openPrivate(user.id)"
             >
               <div class="avatar avatar--small" :style="getAvatarStyle(user.nickname)">
@@ -362,16 +394,18 @@ function getAvatarStyle(seed?: string | number | null) {
             <div class="avatar avatar--hero" :style="getAvatarStyle(currentConversationLabel)">
               {{ getInitials(currentConversationLabel) }}
             </div>
-            <div>
-              <p class="eyebrow">当前会话</p>
+            <div class="chat-stage__identity-copy">
               <h2>{{ currentConversationLabel }}</h2>
-              <p class="chat-meta">{{ currentConversationMeta }}</p>
+              <p class="chat-meta chat-meta--status">
+                <span class="presence-dot" :class="{ 'presence-dot--online': Boolean(chatStore.currentConversation) }"></span>
+                {{ currentConversationMeta }}
+              </p>
             </div>
           </div>
 
           <div class="header-actions">
             <button class="icon-action" type="button" title="刷新会话" @click="chatStore.refreshConversations()">↻</button>
-            <button class="icon-action" type="button" title="创建群组" @click="openDrawer('group')">＋</button>
+            <button class="icon-action" type="button" title="创建群组" @click="openDrawer('group')">⌂</button>
             <button class="icon-action" type="button" title="会话信息" @click="openDrawer('profile')">☰</button>
           </div>
         </header>
@@ -431,9 +465,9 @@ function getAvatarStyle(seed?: string | number | null) {
         </div>
 
         <footer class="composer-shell">
-          <button class="circle-button" type="button" @click="openDrawer('group')">＋</button>
+          <button class="circle-button" type="button" title="创建群组" @click="openDrawer('group')">＋</button>
           <label class="circle-button circle-button--file">
-            ⤴
+            ↗
             <input type="file" hidden @change="uploadFile" />
           </label>
 
@@ -448,10 +482,11 @@ function getAvatarStyle(seed?: string | number | null) {
           <button
             class="send-button"
             type="button"
+            title="发送消息"
             :disabled="!chatStore.currentConversationId || !content.trim() || sendBusy"
             @click="sendText"
           >
-            {{ uploadBusy ? "上传中" : sendBusy ? "发送中" : "发送" }}
+            {{ uploadBusy ? "上传中" : sendBusy ? "发送中" : "➤" }}
           </button>
         </footer>
 
