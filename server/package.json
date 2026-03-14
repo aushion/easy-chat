@@ -1,0 +1,31 @@
+{
+  "name": "easy-chat-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "scripts": {
+    "dev": "nodemon --watch src --ext ts --exec \"node --loader ts-node/esm src/server.ts\"",
+    "init:test-users": "node --loader ts-node/esm src/scripts/init-test-users.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^8.3.0",
+    "@fastify/cors": "^8.4.0",
+    "@fastify/multipart": "^7.7.3",
+    "@fastify/websocket": "^8.3.1",
+    "better-sqlite3": "^11.10.0",
+    "fastify": "^4.29.1",
+    "fastify-plugin": "^4.5.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^20.17.30",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  }
+}

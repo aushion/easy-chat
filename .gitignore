@@ -1,0 +1,10 @@
+node_modules
+dist
+.DS_Store
+server/dist
+web/dist
+server/data.sqlite
+server/data.sqlite-shm
+server/data.sqlite-wal
+server/data.json
+server/src/storage/uploads

@@ -1,0 +1,19 @@
+{
+  "name": "easy-chat",
+  "private": true,
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "dev": "npm run dev:server",
+    "dev:server": "bash -lc 'source ~/.nvm/nvm.sh && nvm use >/dev/null && npm run dev --workspace server'",
+    "dev:web": "bash -lc 'source ~/.nvm/nvm.sh && nvm use >/dev/null && npm run dev --workspace web'",
+    "dev:all": "bash scripts/dev.sh",
+    "init:test-users": "bash -lc 'source ~/.nvm/nvm.sh && nvm use >/dev/null && npm run init:test-users --workspace server'",
+    "build": "bash -lc 'source ~/.nvm/nvm.sh && nvm use >/dev/null && npm run build --workspace server && npm run build --workspace web'"
+  }
+}
